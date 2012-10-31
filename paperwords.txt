@@ -1,0 +1,12 @@
+abstract
+article
+articles
+discussion
+discussions
+fig
+figure
+figures
+relative
+table
+tables
+total
