@@ -18,13 +18,12 @@
 							//otherwise use #include <ctype.h>
 using namespace std;
 
-//PARAMETER DEFINITION:
-#define MIN_RANKING 2 		//minimum number of occurence to appear at the "tag cloud" (-> i.e. to be printed to the console)
+//PARAMETER DECLARATION:
+#define N_PARAM 3 		//number of parameters to be fetched from the file
+unsigned int MIN_RANKING(2);		//minimum number of occurence to appear at the "tag cloud" (-> i.e. to be printed to the console)
 //parameters for the combination-reducing-algorithm:
-#define MIN_OCCURENCE 2		//how many times the combination must at least have appeared
-#define MAX_COMBINATIONS 4 	//how many different combinations a word can have
-//#define REL_OCCURENCE 
-#define RANKING_OCCURENCE 1 //minimum number of occurencies in the text
+unsigned int MIN_OCCURENCE(2);		//how many times the combination must at least have appeared
+unsigned int MAX_COMBINATIONS(4);	//how many different combinations a word can have
 
 //non-desired characters: (incomplete?)
 #define PUNCT_SIZE 12 //change this if you add a character down here->
@@ -35,6 +34,7 @@ string TEST="Cellular respiration is the set of the metabolic \n reactions and p
 //declarations
 class word;
 bool cleanNonAlphabetic(string &input);
+void init_parm(); //load parameters in extern file.
 string strToLower(string input);
 unordered_set<string> init_stopwords(string filename);
 //TODO (optional): include information of stopword, to catch groups like "Univeristy of Zurich"
@@ -63,10 +63,10 @@ class word
 	word(string newword,word* neigh=0)
 	:mainword(newword),count(0)
 	{
-		addEntry(neigh);
+		addNeighbour(neigh);
 	}
 	
-	void addEntry(word* neigh) 		// !! the counter is increased AND a neighbour added.
+	void addNeighbour(word* neigh) 		// !! the counter is increased AND a neighbour added.
 	{
 		count++;
 		if(neigh!=0 && neigh!=this)
@@ -96,10 +96,25 @@ class word
 		return mainword;
 	}	
 	
-	bool reduce(wordcollection &wc) //sticks together the words who belong together
+	bool reduce(wordcollection &wc) // first deletes entries with count<MIN_RANKING,
+									// sticks together the words who belong together
 									// and empties the references
 									// return value: true if the word must be deleted from the collection
-	{
+	
+	{							
+		if(count<MIN_RANKING)		//delete this word
+		{
+			for(NeighbourType::iterator i(neighbour.begin());i!=neighbour.end();i++)
+			{
+				(i->first)->deleteReference(this);
+			}
+			for(unordered_set<word*>::iterator i(referenced.begin());i!=referenced.end();i++)
+			{
+				(*i)->deleteNeighbour(this);
+			}
+			return true;
+		}
+	
 		NeighbourType::iterator next;
 		// delete all neighbours where occurence<MIN_OCCURENCE
 		for(NeighbourType::iterator i(neighbour.begin());i!=neighbour.end();i=next)
@@ -165,6 +180,7 @@ class word
 
 int main()
 {
+	init_parm();
 	wordcollection my_words;
 	unordered_set<string> stopwords(init_stopwords("stopwords.txt"));
 	
@@ -177,19 +193,23 @@ int main()
 		if (cleanNonAlphabetic(tmp)) continue;//continues if tmp is empty.
 		//check for stop words:
 		key=strToLower(tmp);
-		if(stopwords.count(key)) continue; //ignore and go to next word
+		if(stopwords.count(key)) 
+		{	
+			lastword=0;
+			continue; //ignore and go to next word
 		
+		}
 		wordcollection::iterator i(my_words.find(key)); //check if already in collection
 		
 		if(i==my_words.end()) 
 		{//create a new word
-			word* newword=new word(tmp,lastword);
+			word* newword=new word(tmp,lastword); //
 			my_words.insert(mappedword(key,newword));
 			lastword=newword;
 		}
 		else
 		{//reference the last word as neighbour to the found word
-			i->second->addEntry(lastword);
+			i->second->addNeighbour(lastword);
 			lastword=i->second;
 		}
 	}
@@ -255,6 +275,43 @@ bool cleanNonAlphabetic(string &input) 			//removes undesired non-alphabetic cha
 	return input.empty();
 }
 
+void init_parm()
+{
+	ifstream in("config.txt");
+	string tmp;
+	if(in.fail())
+	{
+		cerr<<"Warning: config-file could not be loaded."<<endl;
+		cerr<<" ->default parameters will be used."<<endl;
+		//PARAMETER DEFINITION:
+		MIN_RANKING=2; 		//minimum number of occurence to appear at the "tag cloud" (-> i.e. to be printed to the console)
+		//parameters for the combination-reducing-algorithm:
+		MIN_OCCURENCE=2;		//how many times the combination must at least have appeared
+		MAX_COMBINATIONS=4; 	//how many different combinations a word can have
+	}
+	else
+	{
+		int parameter[N_PARAM];
+		int i=0;
+		while(!(in.eof()) && (i<N_PARAM))
+		{
+			getline(in, tmp);
+			//check for comments:
+			if(tmp[0]!='#')
+			{
+				parameter[i]=atoi(tmp.c_str());
+				i++;
+			}
+			
+		}
+		MIN_RANKING=parameter[0];
+		MIN_OCCURENCE=parameter[1];
+		MAX_COMBINATIONS=parameter[2];
+		in.close();
+	}
+	
+}
+
 string strToLower(string input) 				//makes each letter of a string to lower case
 {
 	for(unsigned int i(0); i<input.size();i++)
@@ -271,8 +328,8 @@ unordered_set<string> init_stopwords(string filename)	//initialize stop word set
 	string tmp;
 	if (in.fail())
 	{
-		cout<<"Warning: Stopword-list could not be loaded."<<endl,
-		cout<<" ->Useless words will not be ignored."<<endl;
+		cerr<<"Warning: Stopword-list could not be loaded."<<endl,
+		cerr<<" ->Useless words will not be ignored."<<endl;
 	}
 	else
 	{
