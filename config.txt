@@ -1,0 +1,15 @@
+# config.txt
+# This filename must not be changed, as well as its structure 
+# (i.e. the order of the parameters).
+# You may add lines starting with a '#' anywhere, they are ignored.
+# Do not add empty lines, or lines starting with another character, 
+# except when you enter an integer number for a parameter
+#
+# Here are the definitions of the parameters used in tagcloudtest.cc
+#
+# MIN_RANKING //minimum number of occurence to appear at the "tag cloud" (-> i.e. to be printed to the console)
+3
+# MIN_OCCURENCE //how many times the combination must at least have appeared
+2
+# MAX_COMBINATIONS //how many different combinations a word can have (the not so frequent ones will be discarded)
+2
