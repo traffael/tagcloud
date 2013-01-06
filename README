@@ -1,0 +1,37 @@
+========== Readme for tagcloudtest.cc =============
+
+- What does it do?
+After analyzing a text (e.g. a scientific paper), this program tries to make a 
+ranking of words or word groups according to their number of occurrence in the text.
+This can be used to create a "tag-cloud", highlighting the important words of
+the text
+
+- How does it work?
+Apart from so-called stop words (these are words which don't add any information
+to the text like "and", "if", "however", etc... and are defined in the separate
+file "stopwords.txt" which still can be extended) the algorithm stores every
+word from the text in a list and counts their occurrence. Additionally, it 
+remembers which words come before and after, in order to keep word groups together
+which belong together.
+
+- How to compile?
+type (in the directory with all the files):
+g++ -g tagcloudtest.cc -std=c++0x -o tagcloudtest
+
+- How to execute?
+After compiling, you may want to analyze a file called "testinput.txt", by typing:
+cat ./testinput.txt | ./tagcloudtest
+
+- And now?
+The result will be a list in the console with the word (group) followed by a comma
+and the number of occurrence in the text on each line. The list is not sorted
+
+
+Note: This program is still in development and not perfect at all!
+- Further steps of improvement will be:
+* Make a more sophisticated class hierarchy with separate files and a makefile.
+* Increase the word group length (currently max. 2 words can for a group, for 
+  execution speed reasons)
+* Add different forms of input and output
+* Improve the stop word list
+* Implement the config file by using xml or json
